@@ -10,7 +10,7 @@
 - Built the text-extraction and cleaning pipeline (121 reports, stop-words, lemmatisation)
 - Built the TF-IDF and LDA topic-modelling analysis
 
-![Workflow](docs/workflow_simple.png)
+![Workflow](workflow_simple.png)
 
 ## At a glance
 
@@ -28,18 +28,18 @@
 2. **Sentiment is a weak signal.** Mean polarity is +0.03 (std 0.03), because the reports are written in deliberately neutral prose. Correlation with the unemployment rate is *r* = +0.21 overall, but that is driven by the COVID spike. Excluding Mar-2020 to Dec-2021 it is *r* = −0.22 (p = 0.03). There is no relationship with the month-to-month *change* (*r* = −0.04, p = 0.67).
 3. **Text alone does not beat guessing at "did unemployment rise?"** With a time-ordered split and a majority-class baseline, accuracy is 56.7% for both the model and the baseline (30 test months). Macro-F1 is 0.57 vs 0.36. This is reported as a negative result rather than tuned until it looks good.
 
-![Sentiment vs unemployment](results/figures/sentiment_vs_unemployment.png)
-![LDA topics over time](results/figures/lda_topics_over_time.png)
+![Sentiment vs unemployment](sentiment_vs_unemployment.png)
+![LDA topics over time](lda_topics_over_time.png)
 
 <details><summary>More charts (word cloud, TF-IDF)</summary>
 
-![Word cloud](results/figures/wordcloud.png)
-![TF-IDF](results/figures/tfidf_top_terms.png)
+![Word cloud](wordcloud.png)
+![TF-IDF](tfidf_top_terms.png)
 </details>
 
 ## How it works
 
-![System architecture](docs/architecture.svg)
+![System architecture](architecture.svg)
 
 | Stage | Where | What it does |
 |---|---|---|
