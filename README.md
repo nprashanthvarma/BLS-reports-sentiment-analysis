@@ -4,88 +4,63 @@
 > An NLP project over **121 BLS *Employment Situation* releases (Jan 2016 – Feb 2026)**, compared with the FRED unemployment rate.
 
 *DSC 785 Text Analytics, Adelphi University, Spring 2026. Final group project (team of four).*
-**My contribution**
 
-- Designed the end-to-end project architecture, from BLS PDFs to final findings
-- Built the text-extraction and cleaning pipeline (121 reports, stop-words, lemmatisation)
-- Built the TF-IDF and LDA topic-modelling analysis
+**My contribution:** I designed the project's end-to-end architecture and built the analysis pipelines: PDF text extraction and cleaning (stop-word filtering, lemmatisation), TF-IDF keyword analysis, and LDA topic modelling across 121 BLS reports.
 
-![Workflow](docs/workflow_simple.png)
+![Workflow](BLS-workflow.png)
 
 ## At a glance
 
 | | |
 |---|---|
-| **Data** | 121 monthly BLS PDF reports (about 43 pages each) and the FRED `UNRATE` monthly series |
-| **Methods** | Text extraction, cleaning and lemmatising, TextBlob sentiment, LDA topic modelling, TF-IDF, logistic regression, Pearson/Spearman correlation |
-| **Stack** | Python, pandas, pypdfium2, scikit-learn, gensim, TextBlob, SciPy, matplotlib |
-| **Reproducible** | `python run_pipeline.py` rebuilds every chart and number in about 30 seconds; unit tests included |
-| **Headline** | Report **topics** track the economic regime (COVID, annual revisions). Report **tone** barely tracks unemployment |
+| **Data** | 121 monthly BLS PDF reports (`bls_reports/`) and the FRED unemployment rate series (`UNRATE.csv`) |
+| **Methods** | Text extraction, cleaning and lemmatising, word frequency, TF-IDF, TextBlob sentiment, LDA topic modelling, logistic regression |
+| **Stack** | Python, pandas, pdfplumber, NLTK, scikit-learn, gensim, TextBlob, matplotlib, WordCloud (Google Colab) |
+| **Deliverables** | Analysis notebook, slide deck, charts |
+| **Headline** | Report **topics** track the economic regime (COVID, remote work). Report **tone** barely tracks unemployment |
 
 ## What we found
 
-1. **Topics tell the story; tone doesn't.** LDA separates a *pandemic / coronavirus / temporary layoff* regime (2020–2022) from routine reporting and from the *annual benchmark and seasonal-adjustment revision* language that appears every February.
-2. **Sentiment is a weak signal.** Mean polarity is +0.03 (std 0.03), because the reports are written in deliberately neutral prose. Correlation with the unemployment rate is *r* = +0.21 overall, but that is driven by the COVID spike. Excluding Mar-2020 to Dec-2021 it is *r* = −0.22 (p = 0.03). There is no relationship with the month-to-month *change* (*r* = −0.04, p = 0.67).
-3. **Text alone does not beat guessing at "did unemployment rise?"** With a time-ordered split and a majority-class baseline, accuracy is 56.7% for both the model and the baseline (30 test months). Macro-F1 is 0.57 vs 0.36. This is reported as a negative result rather than tuned until it looks good.
+**1. The reports are formulaic, and the vocabulary shows it.** The most frequent meaningful terms are *unemployment, estimate, employee, payroll, hour, population, worker, survey, rate*. Sentiment polarity stays in a narrow, mildly positive band (about 0.01 to 0.06 on a −1 to +1 scale), because the BLS writes in deliberately neutral language.
 
-![Sentiment vs unemployment](results/figures/sentiment_vs_unemployment.png)
-![LDA topics over time](results/figures/lda_topics_over_time.png)
+![Word cloud](wordCloudBlsReports.png)
 
-<details><summary>More charts (word cloud, TF-IDF)</summary>
+**2. Sentiment drifts, but does not follow the unemployment spike.** Report sentiment stays between roughly 0.02 and 0.06 through 2016 to 2022, peaks in mid-2020, then trends down from 2023 onward. The unemployment rate meanwhile jumped to 14.8% in April 2020 and fell back by 2022, a shock the wording barely registers.
 
-![Word cloud](results/figures/wordcloud.png)
-![TF-IDF](results/figures/tfidf_top_terms.png)
-</details>
+![Sentiment over time](sentiment%20analysis%20polarity%20plot.png)
+![FRED unemployment rate](fredgraph-stLouisFed.png)
+
+**3. Topics tell the story that tone doesn't.** LDA separates a *manufacturing / production* theme from a *pandemic employment impact* theme and a *remote work and pandemic* theme (the slide deck has the topic words).
+
+**Follow-up check (separate re-analysis).** Re-running the analysis with reports matched to the unemployment series by month, the sentiment correlation was *r* = +0.21 overall (driven by the COVID spike), *r* = −0.22 once Mar-2020 to Dec-2021 is excluded, and about zero against month-to-month changes. A simple text-only classifier for "did unemployment rise?" did no better than a majority-class baseline (56.7% accuracy on 30 held-out months). Takeaway: report tone is a weak signal; report topics are the stronger one.
 
 ## How it works
 
-![System architecture](docs/architecture.svg)
+1. **Collect.** 121 monthly *Employment Situation* PDFs from the BLS plus the monthly unemployment rate from FRED.
+2. **Clean.** Pull text from each PDF, lowercase, strip numbers and punctuation, remove standard and BLS-specific stop-words (boilerplate, table and month words), lemmatise.
+3. **Analyse.** Word frequency and a word cloud, TF-IDF keyword weights, TextBlob sentiment polarity per report, LDA topic modelling (4 topics), and a logistic regression on TF-IDF features.
+4. **Compare and present.** Sentiment against the FRED unemployment rate, plus a slide deck summarising the approach.
 
-| Stage | Where | What it does |
-|---|---|---|
-| Extract | `src/bls_sentiment/extract.py` | Reads each PDF and takes the **reference month from the report title** (not the filename) |
-| Clean | `preprocess.py` | Keeps only the narrative before the statistical tables, strips URLs and numbers, removes stop-words and boilerplate, lemmatises |
-| Join | `analysis.merge_on_month` | Joins reports to FRED by month, so gaps in the series cannot shift the alignment |
-| Analyse | `analysis.py` | Sentiment, correlations (including a COVID-excluded check), LDA (4 topics), TF-IDF, classifier vs baseline |
-| Report | `plots.py`, `run_pipeline.py` | Figures to `results/figures/`, numbers to `results/metrics.json`, per-report scores to `results/report_scores.csv` |
+## Repository contents
+
+| File | What it is |
+|---|---|
+| `GroupProject-BLSReports-sentiment-analysis.ipynb` | Full analysis notebook (Colab) |
+| `Text Analytics.pptx` | Project slide deck |
+| `bls_reports/` | The 121 BLS *Employment Situation* PDFs |
+| `UNRATE.csv` | FRED monthly unemployment rate |
+| `BLS-workflow.png` | Workflow diagram |
+| `wordCloudBlsReports.png`, `sentiment analysis polarity plot.png`, `fredgraph-stLouisFed.png` | Charts used above |
 
 ## Run it
 
-```bash
-python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python run_pipeline.py          # regenerates everything in results/
-pytest -q                       # unit tests
-jupyter lab notebooks/01_walkthrough.ipynb
-```
-
-No API keys are needed and nothing is downloaded at run time.
-
-## Repository layout
-
-```
-run_pipeline.py        one-command entry point
-src/bls_sentiment/     extract, preprocess, analysis, plots, config
-tests/                 unit tests for date alignment, cleaning and join logic
-notebooks/             01_walkthrough.ipynb (clean demo) and the original team notebook
-data/raw/              BLS PDFs, UNRATE.csv, SHA256SUMS
-results/               figures, metrics.json, report_scores.csv
-docs/                  diagrams, security review, project slide deck, original figures
-```
-
-## Data quality fixes made during review
-
-* **Date alignment.** The first version paired reports with unemployment by row position. FRED has no value for Oct-2025 (federal shutdown) and the Sept-2025 report was published in November, so the two series drifted apart. They are now joined on the reference month, with a unit test.
-* **No label leakage.** The first classifier predicted a label derived from the same text, and crashed when every polarity was positive. The target is now the actual change in unemployment from FRED, tested on a time-ordered hold-out against a baseline.
-* **Right text, faster.** Analysing only the narrative removes table vocabulary that dominated early word counts. PDF parsing went from about 16 minutes to 19 seconds, and dependencies are pinned.
+1. Open the notebook in Google Colab.
+2. Upload `bls_reports/` and `UNRATE.csv` to a Google Drive folder and update the folder paths in the first cells to match.
+3. Run all cells. Mounting Drive asks for your own Google sign-in.
 
 ## Limitations and next steps
 
-* TextBlob is a general-purpose lexicon. A finance/economics lexicon (Loughran–McDonald) or a fine-tuned transformer is the natural upgrade.
-* 121 documents (30 in the test window) means classifier numbers are indicative, not conclusive.
-* Add CPI and payrolls as targets and test whether language *leads* the data with lagged correlations.
-* Choose the number of LDA topics with coherence scores instead of fixing k = 4.
-
-## Security
-
-Dependency scan, data-handling notes and a hardening checklist are in [`docs/security_review.md`](docs/security_review.md).
+* TextBlob is a general-purpose lexicon. A finance/economics lexicon (Loughran-McDonald) or a fine-tuned transformer is the natural upgrade.
+* In the notebook, the sentiment-vs-unemployment overlay pairs reports with unemployment by row position. It should join on the report month, because the October 2025 unemployment value is missing (federal shutdown).
+* The logistic regression label is derived from the same sentiment score, so its accuracy is not a true prediction test. A better target is the real change in unemployment, evaluated on a time-ordered split.
+* With 121 documents, results are indicative rather than conclusive. Next steps are to add CPI and payrolls as targets and test whether language leads the data.
